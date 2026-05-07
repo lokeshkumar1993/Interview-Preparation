@@ -740,7 +740,7 @@ var token = HttpContext.Request.Headers["Authorization"];
 
 ---
 
-## JWT
+## [JWT](./JWT.md)
 
 JWT is a token format.
 
