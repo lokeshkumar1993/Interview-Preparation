@@ -119,7 +119,7 @@ This system handles:
 # 1. ❌ Starting Point (Bad Design - God Class)
 
 A naive implementation puts everything in one class:
-
+```csharp
 public class OrderService
 {
     public void PlaceOrder(Order order)
@@ -132,7 +132,7 @@ public class OrderService
         // 6. Generate invoice
     }
 }
-
+```
 ### Problem
 This violates **multiple SOLID principles**:
 - Too many responsibilities
@@ -153,6 +153,7 @@ A class should have only ONE reason to change.
 
 We split responsibilities into separate classes:
 
+```csharp
 public class OrderService
 {
     private readonly PaymentService _paymentService;
@@ -190,7 +191,7 @@ public class NotificationService
         // email/SMS logic
     }
 }
-
+```
 ### Benefit
 Each class has a **single responsibility**, making the system easier to maintain and test.
 
@@ -207,6 +208,7 @@ Software should be open for extension but closed for modification.
 
 Every time a new payment method is added, we modify existing code.
 
+```csharp
 public class PaymentService
 {
     public void Process(Order order)
@@ -214,11 +216,12 @@ public class PaymentService
         // only credit card logic
     }
 }
-
+```
 ---
 
 ### Solution (use abstraction)
 
+```csharp
 public interface IPaymentMethod
 {
     void Pay(Order order);
@@ -239,11 +242,12 @@ public class UpiPayment : IPaymentMethod
         // UPI payment
     }
 }
-
+```
 ---
 
 ### Updated Payment Service
 
+```csharp
 public class PaymentService
 {
     private readonly IPaymentMethod _paymentMethod;
@@ -258,7 +262,7 @@ public class PaymentService
         _paymentMethod.Pay(order);
     }
 }
-
+```
 ### Benefit
 We can add new payment methods without changing existing code.
 
@@ -273,6 +277,7 @@ Derived classes must be replaceable without breaking behavior.
 
 ### Problem Example
 
+```csharp
 public class CashOnDeliveryPayment : IPaymentMethod
 {
     public void Pay(Order order)
@@ -280,6 +285,7 @@ public class CashOnDeliveryPayment : IPaymentMethod
         throw new NotSupportedException("COD is not processed online");
     }
 }
+```
 
 ### Problem
 This breaks expectations — substituting this class causes runtime failure.
@@ -290,6 +296,7 @@ This breaks expectations — substituting this class causes runtime failure.
 
 Split responsibilities:
 
+```csharp
 public interface IOnlinePayment
 {
     void PayNow(Order order);
@@ -299,6 +306,7 @@ public interface ICodPayment
 {
     void PayOnDelivery(Order order);
 }
+```
 
 ### Benefit
 Each implementation behaves correctly without breaking substitution rules.
@@ -314,12 +322,14 @@ Do not force classes to implement methods they don’t need.
 
 ### Problem (bad design)
 
+```csharp
 public interface IOrderOperations
 {
     void Pay(Order order);
     void GenerateInvoice(Order order);
     void Refund(Order order);
 }
+```
 
 ### Problem
 A class may not need all these methods but is forced to implement them.
@@ -330,6 +340,7 @@ A class may not need all these methods but is forced to implement them.
 
 Split interfaces:
 
+```csharp
 public interface IPayment
 {
     void Pay(Order order);
@@ -344,6 +355,7 @@ public interface IRefundService
 {
     void Refund(Order order);
 }
+```
 
 ### Benefit
 Classes depend only on what they actually use.
@@ -359,10 +371,12 @@ High-level modules should not depend on low-level modules. Both should depend on
 
 ### Problem (bad design)
 
+```csharp
 public class OrderService
 {
     private readonly SqlOrderRepository _repo = new SqlOrderRepository();
 }
+```
 
 ### Problem
 Tightly coupled to SQL implementation.
@@ -371,6 +385,7 @@ Tightly coupled to SQL implementation.
 
 ### Solution
 
+```csharp
 public interface IOrderRepository
 {
     void Save(Order order);
@@ -383,11 +398,13 @@ public class SqlOrderRepository : IOrderRepository
         // SQL logic
     }
 }
+```
 
 ---
 
 ### Final Design
 
+```csharp
 public class OrderService
 {
     private readonly IOrderRepository _repo;
@@ -397,6 +414,7 @@ public class OrderService
         _repo = repo;
     }
 }
+```
 
 ### Benefit
 We can switch database implementations without changing business logic.
