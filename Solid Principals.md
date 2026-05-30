@@ -88,3 +88,337 @@ This video provides a comprehensive explanation of the **SOLID principles**, fun
 ---
 
 This professional summary distills the core teachings and practical insights from the video, providing a clear guide to SOLID principles for developers aiming to excel in design and technical interviews.
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------
+# Examples
+
+
+
+# SOLID Principles in .NET (Using Order Processing System Example)
+
+We will learn SOLID principles using ONE consistent example throughout:
+
+👉 **Order Processing System (like an e-commerce checkout system in .NET)**
+
+This system handles:
+- Order placement
+- Payment processing
+- Order storage
+- Notifications
+- Invoice generation
+
+---
+
+# 1. ❌ Starting Point (Bad Design - God Class)
+
+A naive implementation puts everything in one class:
+
+public class OrderService
+{
+    public void PlaceOrder(Order order)
+    {
+        // 1. Validate order
+        // 2. Calculate price
+        // 3. Process payment
+        // 4. Save to database
+        // 5. Send email
+        // 6. Generate invoice
+    }
+}
+
+### Problem
+This violates **multiple SOLID principles**:
+- Too many responsibilities
+- Hard to test
+- Hard to extend
+- Any change affects everything
+
+---
+
+# 2. S — Single Responsibility Principle (SRP)
+
+### Idea:
+A class should have only ONE reason to change.
+
+---
+
+### Refactored Design
+
+We split responsibilities into separate classes:
+
+public class OrderService
+{
+    private readonly PaymentService _paymentService;
+    private readonly OrderRepository _orderRepository;
+    private readonly NotificationService _notificationService;
+
+    public void PlaceOrder(Order order)
+    {
+        _paymentService.Process(order);
+        _orderRepository.Save(order);
+        _notificationService.Notify(order);
+    }
+}
+
+public class PaymentService
+{
+    public void Process(Order order)
+    {
+        // payment logic
+    }
+}
+
+public class OrderRepository
+{
+    public void Save(Order order)
+    {
+        // database logic
+    }
+}
+
+public class NotificationService
+{
+    public void Notify(Order order)
+    {
+        // email/SMS logic
+    }
+}
+
+### Benefit
+Each class has a **single responsibility**, making the system easier to maintain and test.
+
+---
+
+# 3. O — Open/Closed Principle (OCP)
+
+### Idea:
+Software should be open for extension but closed for modification.
+
+---
+
+### Problem (bad design)
+
+Every time a new payment method is added, we modify existing code.
+
+public class PaymentService
+{
+    public void Process(Order order)
+    {
+        // only credit card logic
+    }
+}
+
+---
+
+### Solution (use abstraction)
+
+public interface IPaymentMethod
+{
+    void Pay(Order order);
+}
+
+public class CreditCardPayment : IPaymentMethod
+{
+    public void Pay(Order order)
+    {
+        // credit card payment
+    }
+}
+
+public class UpiPayment : IPaymentMethod
+{
+    public void Pay(Order order)
+    {
+        // UPI payment
+    }
+}
+
+---
+
+### Updated Payment Service
+
+public class PaymentService
+{
+    private readonly IPaymentMethod _paymentMethod;
+
+    public PaymentService(IPaymentMethod paymentMethod)
+    {
+        _paymentMethod = paymentMethod;
+    }
+
+    public void Process(Order order)
+    {
+        _paymentMethod.Pay(order);
+    }
+}
+
+### Benefit
+We can add new payment methods without changing existing code.
+
+---
+
+# 4. L — Liskov Substitution Principle (LSP)
+
+### Idea:
+Derived classes must be replaceable without breaking behavior.
+
+---
+
+### Problem Example
+
+public class CashOnDeliveryPayment : IPaymentMethod
+{
+    public void Pay(Order order)
+    {
+        throw new NotSupportedException("COD is not processed online");
+    }
+}
+
+### Problem
+This breaks expectations — substituting this class causes runtime failure.
+
+---
+
+### Better Design
+
+Split responsibilities:
+
+public interface IOnlinePayment
+{
+    void PayNow(Order order);
+}
+
+public interface ICodPayment
+{
+    void PayOnDelivery(Order order);
+}
+
+### Benefit
+Each implementation behaves correctly without breaking substitution rules.
+
+---
+
+# 5. I — Interface Segregation Principle (ISP)
+
+### Idea:
+Do not force classes to implement methods they don’t need.
+
+---
+
+### Problem (bad design)
+
+public interface IOrderOperations
+{
+    void Pay(Order order);
+    void GenerateInvoice(Order order);
+    void Refund(Order order);
+}
+
+### Problem
+A class may not need all these methods but is forced to implement them.
+
+---
+
+### Solution
+
+Split interfaces:
+
+public interface IPayment
+{
+    void Pay(Order order);
+}
+
+public interface IInvoiceGenerator
+{
+    void Generate(Order order);
+}
+
+public interface IRefundService
+{
+    void Refund(Order order);
+}
+
+### Benefit
+Classes depend only on what they actually use.
+
+---
+
+# 6. D — Dependency Inversion Principle (DIP)
+
+### Idea:
+High-level modules should not depend on low-level modules. Both should depend on abstractions.
+
+---
+
+### Problem (bad design)
+
+public class OrderService
+{
+    private readonly SqlOrderRepository _repo = new SqlOrderRepository();
+}
+
+### Problem
+Tightly coupled to SQL implementation.
+
+---
+
+### Solution
+
+public interface IOrderRepository
+{
+    void Save(Order order);
+}
+
+public class SqlOrderRepository : IOrderRepository
+{
+    public void Save(Order order)
+    {
+        // SQL logic
+    }
+}
+
+---
+
+### Final Design
+
+public class OrderService
+{
+    private readonly IOrderRepository _repo;
+
+    public OrderService(IOrderRepository repo)
+    {
+        _repo = repo;
+    }
+}
+
+### Benefit
+We can switch database implementations without changing business logic.
+
+---
+
+# 🔥 Final Summary of SOLID
+
+- **SRP** → One class, one responsibility  
+- **OCP** → Extend behavior without modifying code  
+- **LSP** → Subtypes must be safely replaceable  
+- **ISP** → Avoid forcing unused methods  
+- **DIP** → Depend on abstractions, not concrete classes  
+
+---
+
+# 🏁 Final Outcome
+
+From one monolithic service, we now have:
+
+- Clean separation of concerns
+- Extensible payment system
+- Flexible architecture
+- Testable components
+- Maintainable design
